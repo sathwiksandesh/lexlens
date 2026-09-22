@@ -343,7 +343,7 @@
     <div class="status-readout">
       <span class="dot" id="apiDot"></span>
       <span id="apiStatus">checking API…</span>
-      <input id="apiBase" value="http://localhost:8000" spellcheck="false" />
+      <input id="apiBase" spellcheck="false" />
     </div>
   </header>
 
@@ -405,6 +405,13 @@ const readout = $("#readoutPanel");
 const docList = $("#docList");
 const apiBaseInput = $("#apiBase");
 
+const apiFromQuery = new URLSearchParams(location.search).get("api");
+const apiFromStorage = localStorage.getItem("lexlensApiBase");
+const defaultApiBase = location.protocol === "http:" || location.protocol === "https:"
+  ? location.origin
+  : "http://localhost:8000";
+apiBaseInput.value = (apiFromQuery || apiFromStorage || defaultApiBase).replace(/\/$/, "");
+
 function apiBase(){ return apiBaseInput.value.replace(/\/$/, ""); }
 
 async function checkHealth(){
@@ -419,7 +426,10 @@ async function checkHealth(){
   }
 }
 checkHealth();
-apiBaseInput.addEventListener("change", checkHealth);
+apiBaseInput.addEventListener("change", () => {
+  localStorage.setItem("lexlensApiBase", apiBase());
+  checkHealth();
+});
 
 // ---------- Upload ----------
 const fileInput = $("#fileInput");

@@ -34,6 +34,20 @@ Supports `.pdf`, `.docx`, `.txt`, or pasted text as input.
 
 ## Run it
 
+### Deploy to Vercel
+
+The repository includes a Vercel Python function at `api/index.py`. In the
+Vercel project settings, add these Environment Variables for Production:
+
+```text
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=openai/gpt-oss-120b
+```
+
+Redeploy after adding the variables. The deployed frontend automatically uses
+the same-origin `/api` routes; the API status indicator should then show that
+Groq is configured.
+
 ### 1. Backend
 
 ```bash
@@ -50,7 +64,9 @@ uvicorn main:app --reload --port 8000
 Just open `frontend/index.html` in a browser (double-click it, or serve it
 with any static server). The top-right field in the header lets you point it
 at a different API base URL if you deploy the backend elsewhere (e.g. a
-Render/Fly/Railway URL) — default is `http://localhost:8000`.
+Render/Fly/Railway URL). When hosted over HTTP(S), it defaults to the current
+site origin; when opened directly as a file, it defaults to
+`http://localhost:8000`.
 
 ## Notes on the Groq integration
 
