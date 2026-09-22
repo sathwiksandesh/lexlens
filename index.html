@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>LexLens — Legal Document Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ---- Parchment / ink / brass system ---- */
+  --paper:#f5efe1;
+  --paper-deep:#eadfc7;
+  --surface:#fffcf4;
+  --surface-2:#fbf5e6;
+  --surface-3:#f2e9d6;
+  --line:rgba(37,30,17,.13);
+  --line-strong:rgba(37,30,17,.30);
+  --ink:#221c12;
+  --ink-soft:#57503f;
+  --ink-faint:#948a70;
+  --ink-faint-2:#b3a98d;
+
+  --brass:#9a723a;
+  --brass-deep:#6f5024;
+  --brass-soft:rgba(154,114,58,.12);
+  --brass-line:rgba(154,114,58,.38);
+
+  --burgundy:#8a2f2c;
+  --ochre:#a56a24;
+
+  --shadow:0 22px 60px rgba(43,32,10,.12);
+  --shadow-sm:0 10px 26px rgba(43,32,10,.08);
+  --radius:18px;
+
+  --serif:'Fraunces',ui-serif,Georgia,serif;
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+body{
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1000px 560px at 8% -10%,rgba(154,114,58,.10),transparent 60%),
+    radial-gradient(720px 520px at 100% 4%,rgba(138,47,44,.05),transparent 58%),
+    linear-gradient(180deg,#f7f1e5 0%,#f2ead9 100%);
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(37,30,17,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(37,30,17,.028) 1px,transparent 1px);
+  background-size:42px 42px;
+  mask-image:linear-gradient(to bottom,black,transparent 78%);
+}
+::selection{background:rgba(154,114,58,.24)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{outline:none}
+a{color:var(--brass-deep)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{width:min(1500px,100%);margin:0 auto;padding:24px 30px 56px;position:relative}
+
+/* ---------------- top bar ---------------- */
+header.bar{
+  min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:14px 18px 14px 16px;margin-bottom:24px;
+  border:1px solid var(--line);border-radius:20px;
+  background:linear-gradient(155deg,rgba(255,252,244,.92),rgba(246,238,220,.86));
+  box-shadow:var(--shadow-sm);backdrop-filter:blur(18px);
+  position:sticky;top:14px;z-index:20;
+}
+.brand{display:flex;align-items:center;gap:13px;min-width:0}
+.brand-mark{
+  width:44px;height:44px;border-radius:11px;flex:none;position:relative;
+  background:linear-gradient(155deg,#2c2417,#221c12);
+  box-shadow:inset 0 0 0 1px rgba(154,114,58,.4), 0 8px 18px rgba(34,28,18,.28);
+  display:grid;place-items:center;
+}
+.brand-mark span{
+  font-family:var(--serif);font-weight:600;font-size:19px;color:var(--brass);
+  letter-spacing:-.02em;
+}
+.brand h1{font-family:var(--serif);font-size:22px;line-height:1;margin:0 0 6px;font-weight:600;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--ink-faint);font:12px/1.3 var(--sans);letter-spacing:.01em}
+.status-readout{display:flex;align-items:center;gap:9px;min-width:0}
+.status-copy{font:11px var(--mono);color:var(--ink-faint);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint-2)}
+.dot.live{background:var(--brass);box-shadow:0 0 0 4px rgba(154,114,58,.12),0 0 10px rgba(154,114,58,.6)}
+.status-readout input{
+  width:215px;background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  font:10px var(--mono);padding:9px 11px;border-radius:10px;outline:none;
+}
+.status-readout input:focus{border-color:var(--brass-line);box-shadow:0 0 0 3px var(--brass-soft)}
+
+/* ---------------- layout ---------------- */
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px;align-items:start}
+.sidebar{display:flex;flex-direction:column;gap:14px}
+.panel{
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,var(--surface),var(--surface-2));
+  box-shadow:var(--shadow-sm);
+  padding:19px;
+}
+.panel h2{
+  display:flex;align-items:center;gap:10px;margin:0 0 15px;font-size:13.5px;letter-spacing:-.005em;
+  font-weight:600;color:var(--ink);
+}
+.panel h2 .idx{
+  display:inline-flex;align-items:center;justify-content:center;width:25px;height:23px;border-radius:7px;
+  color:var(--brass-deep);font:600 10px var(--mono);border:1px solid var(--brass-line);background:var(--brass-soft)
+}
+
+/* ---------------- upload ---------------- */
+.drop{
+  display:block;border:1px dashed var(--line-strong);border-radius:14px;padding:24px 14px;
+  text-align:center;color:var(--ink-faint);font-size:12px;cursor:pointer;
+  background:var(--surface-3);transition:.2s ease;
+}
+.drop:hover,.drop.drag{border-color:var(--brass);background:var(--brass-soft);transform:translateY(-1px)}
+.drop b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:5px;font-weight:600}
+.drop input{display:none}
+.drop-icon{
+  width:40px;height:40px;border-radius:11px;margin:0 auto 11px;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--brass-line);color:var(--brass-deep);font-size:16px;
+}
+textarea.paste{
+  width:100%;min-height:90px;margin-top:10px;resize:vertical;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:12px;
+  padding:11px 12px;font:12.5px/1.6 var(--sans);outline:none;
+}
+textarea.paste::placeholder{color:var(--ink-faint-2)}
+textarea.paste:focus{border-color:var(--brass-line);box-shadow:0 0 0 3px var(--brass-soft)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink);padding:10px 14px;border-radius:11px;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:.16s ease;
+}
+.btn:hover{border-color:var(--brass-line);background:var(--brass-soft);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.primary{
+  color:var(--surface);border-color:transparent;
+  background:linear-gradient(150deg,#3a2f1c,#221c12);
+  box-shadow:0 10px 22px rgba(34,28,18,.24), inset 0 0 0 1px rgba(154,114,58,.35);
+}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.full{width:100%;margin-top:10px}
+
+/* ---------------- docs ---------------- */
+#docList{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.doc-card{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 11px;
+  border:1px solid var(--line);background:var(--surface);border-radius:12px;font-size:11px;
+  transition:.15s ease;
+}
+.doc-card:hover{background:var(--surface-3)}
+.doc-card .name{font:600 11.5px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:225px;color:var(--ink)}
+.doc-card .meta{color:var(--ink-faint);font-size:10px;margin-top:3px}
+.doc-card .x{color:var(--ink-faint);cursor:pointer;font-size:18px;line-height:1;padding:2px 4px}
+.doc-card .x:hover{color:var(--burgundy)}
+
+/* ---------------- modes ---------------- */
+.modes{display:flex;flex-direction:column;gap:7px}
+.mode-btn{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink-soft);padding:11px 12px;border-radius:12px;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:.16s ease;
+}
+.mode-btn:hover{color:var(--ink);border-color:var(--brass-line);background:var(--brass-soft)}
+.mode-btn .k{
+  width:24px;height:24px;display:grid;place-items:center;flex:none;border-radius:7px;
+  color:var(--ink-faint);border:1px solid var(--line);font:600 10px var(--serif);background:var(--surface-3)
+}
+.mode-btn.active{
+  color:var(--ink);border-color:var(--brass-line);
+  background:linear-gradient(90deg,var(--brass-soft),transparent);
+}
+.mode-btn.active .k{color:var(--surface);border-color:transparent;background:linear-gradient(150deg,#3a2f1c,#221c12)}
+.mode-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------------- readout ---------------- */
+.readout{min-height:650px;padding:0;overflow:hidden}
+.readout-inner{padding:28px}
+.eyebrow{font:600 11px var(--sans);color:var(--brass-deep);letter-spacing:.01em;margin-bottom:7px}
+.empty{
+  min-height:650px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:50px;color:var(--ink-faint);position:relative;overflow:hidden;
+}
+.empty::before{
+  content:"";position:absolute;width:380px;height:380px;border-radius:50%;
+  background:radial-gradient(circle,rgba(154,114,58,.10),transparent 68%);filter:blur(4px)
+}
+.empty > *{position:relative}
+.empty .glyph{
+  width:74px;height:74px;border-radius:20px;display:grid;place-items:center;margin-bottom:18px;
+  border:1px solid var(--brass-line);background:var(--surface);
+  color:var(--brass-deep);font-size:24px;font-family:var(--serif);box-shadow:var(--shadow-sm);
+}
+.empty .empty-title{font-family:var(--serif);font-size:21px;font-weight:600;color:var(--ink);margin-bottom:9px;letter-spacing:-.01em}
+.empty .empty-copy{font-size:13px;line-height:1.65;color:var(--ink-faint);max-width:400px}
+.empty .btn{margin-top:19px}
+
+/* ---------------- result content ---------------- */
+.prose{padding:28px;font-size:14.5px;line-height:1.8}
+.prose h2{font-family:var(--serif);font-weight:600;font-size:19px;margin:26px 0 9px;color:var(--ink);letter-spacing:-.01em}
+.prose h2:first-child{margin-top:0}
+.prose p{margin:0 0 13px;color:var(--ink-soft)}
+.cursor-blink{display:inline-block;width:7px;height:16px;background:var(--brass);vertical-align:text-bottom;animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.summary-line{
+  font-size:13.5px;line-height:1.7;padding:16px 17px;border:1px solid var(--brass-line);
+  border-left:3px solid var(--brass);background:var(--brass-soft);border-radius:12px;margin-bottom:19px;
+  color:var(--ink-soft);
+}
+.tag{font:600 9.5px var(--mono);padding:4px 8px;border-radius:6px;letter-spacing:.02em}
+.tag.high{background:rgba(138,47,44,.09);color:var(--burgundy);border:1px solid rgba(138,47,44,.28)}
+.tag.medium{background:rgba(165,106,36,.10);color:var(--ochre);border:1px solid rgba(165,106,36,.28)}
+.tag.low{background:var(--brass-soft);color:var(--brass-deep);border:1px solid var(--brass-line)}
+.tag.cat{background:var(--surface-3);color:var(--ink-faint);border:1px solid var(--line)}
+.clause,.diff{
+  border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:16px 17px;margin-bottom:10px
+}
+.clause{border-left-width:3px}
+.clause.high{border-left-color:var(--burgundy)}
+.clause.medium{border-left-color:var(--ochre)}
+.clause.low{border-left-color:var(--brass)}
+.clause .row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.clause .title{font-weight:700;font-size:13.5px;color:var(--ink)}
+.clause .tags{display:flex;gap:6px}
+.clause .excerpt{font:11px/1.6 var(--mono);color:var(--ink-faint);border-left:2px solid var(--line);padding-left:10px;margin:8px 0}
+.clause .explain{font-size:13px;color:var(--ink-soft);line-height:1.65}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col-a-b{font:600 10px var(--sans);color:var(--ink-faint);margin-bottom:6px;letter-spacing:.01em}
+.cell{font-size:12.5px;padding:11px;background:var(--surface-3);border-radius:9px;border:1px solid var(--line);line-height:1.6;color:var(--ink-soft)}
+.diff .topic{font-family:var(--serif);font-weight:600;font-size:14.5px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--ink)}
+.diff .why{font-size:12px;color:var(--ink-faint);margin-top:9px}
+.chat-log{display:flex;flex-direction:column;gap:11px;margin-bottom:14px;max-height:520px;overflow-y:auto;padding:24px 28px 4px}
+.msg{max-width:78%;padding:12px 15px;border-radius:14px;font-size:13.5px;line-height:1.65}
+.msg.user{align-self:flex-end;background:var(--brass-soft);border:1px solid var(--brass-line);color:var(--ink)}
+.msg.assistant{align-self:flex-start;background:var(--surface);border:1px solid var(--line);color:var(--ink-soft)}
+.chat-input-row{display:flex;gap:9px;padding:0 28px 25px}
+.chat-input-row input{
+  flex:1;background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  border-radius:12px;padding:12px 14px;font-size:13.5px;outline:none
+}
+.chat-input-row input::placeholder{color:var(--ink-faint-2)}
+.chat-input-row input:focus{border-color:var(--brass-line);box-shadow:0 0 0 3px var(--brass-soft)}
+ul.plain{margin:0;padding-left:19px;font-size:13px;line-height:1.8;color:var(--ink-soft)}
+.checklist-block{margin-bottom:21px}
+.checklist-block h3{font-family:var(--serif);font-weight:600;font-size:14.5px;margin:0 0 10px;color:var(--ink)}
+.glossary-item{display:flex;gap:12px;font-size:12.5px;margin-bottom:9px}
+.glossary-item .term{font:600 11px var(--mono);color:var(--brass-deep);min-width:130px}
+.glossary-item .def{color:var(--ink-faint)}
+.err{margin:24px;padding:14px;border:1px solid rgba(138,47,44,.28);background:rgba(138,47,44,.06);border-radius:12px;color:var(--burgundy);font:12px/1.55 var(--mono)}
+.spinner{display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--brass);animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer-note{
+  margin-top:19px;padding:16px 4px 0;border-top:1px solid var(--line);
+  color:var(--ink-faint);font:11.5px/1.7 var(--sans)
+}
+.scan-hint{margin-top:14px;padding:11px 12px;border-radius:10px;background:var(--surface-3);border:1px solid var(--line);color:var(--ink-faint);font-size:11px;line-height:1.6}
+
+@media (max-width:1050px){
+  .grid{grid-template-columns:290px minmax(0,1fr)}
+  .status-copy{display:none}
+}
+@media (max-width:820px){
+  .app{padding:14px 14px 35px}
+  header.bar{position:relative;top:0;padding:12px;align-items:flex-start}
+  .status-readout input{width:150px}
+  .grid{grid-template-columns:1fr}
+  .sidebar{display:grid;grid-template-columns:1fr 1fr}
+  .readout{min-height:560px}
+  .empty{min-height:540px}
+}
+@media (max-width:600px){
+  header.bar{flex-direction:column}
+  .status-readout{width:100%}.status-readout input{flex:1;width:auto}
+  .sidebar{display:flex}
+  .grid2{grid-template-columns:1fr}
+  .chat-input-row{padding-left:16px;padding-right:16px}
+  .chat-log{padding-left:16px;padding-right:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="bar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><span>L</span></div>
+      <div>
+        <h1>LexLens</h1>
+        <p>legal intelligence workspace · read · compare · question</p>
+      </div>
+    </div>
+    <div class="status-readout">
+      <span class="dot" id="apiDot"></span>
+      <span class="status-copy" id="apiStatus">checking API…</span>
+      <input id="apiBase" value="http://localhost:8000" spellcheck="false" aria-label="API base URL" />
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="sidebar">
+      <div class="panel">
+        <h2><span class="idx">01</span> Document workspace</h2>
+
+        <label class="drop" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" />
+          <div class="drop-icon">↑</div>
+          <b>Upload a legal document</b>
+          <span>Drop here or click to browse</span>
+          <div style="margin-top:6px;font-size:10.5px;color:var(--ink-faint-2)">PDF · DOCX · TXT · MD</div>
+        </label>
+
+        <textarea class="paste" id="pasteBox" placeholder="Or paste legal text here…"></textarea>
+        <button class="btn full" id="pasteBtn">＋ Add pasted text</button>
+        <div id="docList"></div>
+        <div class="scan-hint">Your documents stay in server memory for this session. Select a document above to make it active.</div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="idx">02</span> Choose an action</h2>
+        <div class="modes">
+          <button class="mode-btn active" data-mode="simplify"><span class="k">S</span><span>Plain-language rewrite</span></button>
+          <button class="mode-btn" data-mode="analyze"><span class="k">A</span><span>Clause &amp; risk analysis</span></button>
+          <button class="mode-btn" data-mode="compare"><span class="k">C</span><span>Compare documents</span></button>
+          <button class="mode-btn" data-mode="chat"><span class="k">Q</span><span>Ask questions</span></button>
+          <button class="mode-btn" data-mode="checklist"><span class="k">N</span><span>Checklist &amp; next steps</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="panel readout" id="readoutPanel">
+      <div class="empty">
+        <div class="glyph">⌕</div>
+        <div class="empty-title">Your legal workspace is ready</div>
+        <div class="empty-copy">Upload a document or paste text to start. Then choose an action from the left to rewrite, analyze, compare, question, or organize the document.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="footer-note">
+    LexLens explains and organizes legal text. It does not provide legal advice, does not represent you,
+    and is not a substitute for a licensed attorney. For decisions with real consequences, confirm with a
+    qualified professional in your jurisdiction. Documents are held in server memory for this session only.
+  </div>
+</div>
+
+<script>
+const state = {
+  docs: {},        // doc_id -> {filename, chars}
+  activeDoc: null,
+  compareA: null,
+  compareB: null,
+  mode: "simplify",
+  chatHistory: [],
+};
+
+const $ = (sel) => document.querySelector(sel);
+const readout = $("#readoutPanel");
+const docList = $("#docList");
+const apiBaseInput = $("#apiBase");
+
+function apiBase(){ return apiBaseInput.value.replace(/\/$/, ""); }
+
+async function checkHealth(){
+  try{
+    const r = await fetch(apiBase() + "/api/health");
+    const d = await r.json();
+    $("#apiDot").classList.toggle("live", d.groq_configured);
+    $("#apiStatus").textContent = d.groq_configured ? "API online ·  configured" : "API online · GROQ_API_KEY missing";
+  }catch(e){
+    $("#apiDot").classList.remove("live");
+    $("#apiStatus").textContent = "API unreachable";
+  }
+}
+checkHealth();
+apiBaseInput.addEventListener("change", checkHealth);
+
+// ---------- Upload ----------
+const fileInput = $("#fileInput");
+const dropZone = $("#dropZone");
+fileInput.addEventListener("change", () => { if(fileInput.files[0]) uploadFile(fileInput.files[0]); });
+["dragover","dragenter"].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add("drag"); }));
+["dragleave","drop"].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove("drag"); }));
+dropZone.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if(f) uploadFile(f); });
+
+$("#pasteBtn").addEventListener("click", async () => {
+  const text = $("#pasteBox").value.trim();
+  if(!text) return;
+  try{
+    const r = await fetch(apiBase() + "/api/upload-text", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text, filename: "Pasted text " + (Object.keys(state.docs).length+1)})
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || "Upload failed");
+    addDoc(d);
+    $("#pasteBox").value = "";
+  }catch(e){ alert(e.message); }
+});
+
+async function uploadFile(file){
+  const fd = new FormData();
+  fd.append("file", file);
+  try{
+    const r = await fetch(apiBase() + "/api/upload", {method:"POST", body: fd});
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || "Upload failed");
+    addDoc(d);
+  }catch(e){ alert(e.message); }
+  fileInput.value = "";
+}
+
+function addDoc(d){
+  state.docs[d.doc_id] = d;
+  if(!state.activeDoc) state.activeDoc = d.doc_id;
+  renderDocList();
+}
+
+function renderDocList(){
+  docList.innerHTML = "";
+  Object.values(state.docs).forEach(d => {
+    const card = document.createElement("div");
+    card.className = "doc-card";
+    const isActive = d.doc_id === state.activeDoc;
+    card.style.borderColor = isActive ? "var(--brass-line)" : "var(--line)";
+    card.style.background = isActive ? "var(--brass-soft)" : "var(--surface)";
+    card.innerHTML = `
+      <div style="cursor:pointer" data-select="${d.doc_id}">
+        <div class="name">${escapeHtml(d.filename)}</div>
+        <div class="meta">${d.chars.toLocaleString()} chars ${isActive ? "· active" : ""}</div>
+      </div>
+      <span class="x" data-remove="${d.doc_id}">&times;</span>
+    `;
+    docList.appendChild(card);
+  });
+  docList.querySelectorAll("[data-select]").forEach(el => {
+    el.addEventListener("click", () => { state.activeDoc = el.dataset.select; renderDocList(); });
+  });
+  docList.querySelectorAll("[data-remove]").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = el.dataset.remove;
+      delete state.docs[id];
+      if(state.activeDoc === id) state.activeDoc = Object.keys(state.docs)[0] || null;
+      renderDocList();
+    });
+  });
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ---------- Mode switching ----------
+document.querySelectorAll(".mode-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.mode = btn.dataset.mode;
+    state.chatHistory = [];
+    renderMode();
+  });
+});
+
+function requireDoc(){
+  if(!state.activeDoc){
+    readout.innerHTML = `<div class="empty"><div class="glyph">!</div><div class="empty-title">Load a document first</div></div>`;
+    return false;
+  }
+  return true;
+}
+
+function renderMode(){
+  if(state.mode === "compare"){ renderCompareSetup(); return; }
+  if(!requireDoc()) return;
+  if(state.mode === "simplify") return renderRunButton("Plain-language rewrite", "Rewrites the document section by section in everyday language.", runSimplify);
+  if(state.mode === "analyze") return renderRunButton("Clause &amp; risk analysis", "Extracts obligations, rights, deadlines, and flags risky terms.", runAnalyze);
+  if(state.mode === "chat") return renderChat();
+  if(state.mode === "checklist") return renderRunButton("Checklist &amp; next steps", "Builds an action list, key dates, documents to gather, and questions for a lawyer.", runChecklist);
+}
+
+function renderRunButton(title, desc, fn){
+  readout.innerHTML = `
+    <div class="empty">
+      <div class="glyph">▷</div>
+      <div class="empty-title" style="font-size:19px">${title}</div>
+      <div class="empty-copy">${desc}</div>
+      <button class="btn primary" id="runBtn">Run scan</button>
+    </div>`;
+  $("#runBtn").addEventListener("click", fn);
+}
+
+function loadingState(label){
+  readout.innerHTML = `<div class="empty"><span class="spinner"></span>&nbsp; ${label}</div>`;
+}
+
+function errorState(msg){
+  readout.innerHTML = `<div class="err">Scan failed: ${escapeHtml(msg)}</div>`;
+}
+
+// ---------- Simplify (streaming) ----------
+async function runSimplify(){
+  loadingState("Rewriting in plain language…");
+  try{
+    const res = await fetch(apiBase() + "/api/simplify", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id: state.activeDoc})
+    });
+    if(!res.ok){ const d = await res.json(); throw new Error(d.detail || "Request failed"); }
+    readout.innerHTML = `<div class="prose" id="streamTarget"><span class="cursor-blink"></span></div>`;
+    const target = $("#streamTarget");
+    await streamInto(res, target);
+  }catch(e){ errorState(e.message); }
+}
+
+async function streamInto(res, target){
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let acc = "";
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    acc += decoder.decode(value, {stream:true});
+    target.innerHTML = mdLite(acc) + '<span class="cursor-blink"></span>';
+  }
+  target.innerHTML = mdLite(acc);
+}
+
+function mdLite(text){
+  // Minimal markdown: ## headings and paragraphs. Escapes HTML first.
+  const esc = escapeHtml(text);
+  const lines = esc.split("\n");
+  let html = "";
+  let para = [];
+  const flush = () => { if(para.length){ html += "<p>" + para.join(" ") + "</p>"; para = []; } };
+  for(const line of lines){
+    const h = line.match(/^##\s+(.*)/);
+    if(h){ flush(); html += `<h2>${h[1]}</h2>`; }
+    else if(line.trim() === ""){ flush(); }
+    else { para.push(line.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")); }
+  }
+  flush();
+  return html;
+}
+
+// ---------- Analyze ----------
+async function runAnalyze(){
+  loadingState("Extracting clauses and risks…");
+  try{
+    const res = await fetch(apiBase() + "/api/analyze", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id: state.activeDoc})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail || "Request failed");
+    renderAnalyze(d);
+  }catch(e){ errorState(e.message); }
+}
+
+function renderAnalyze(d){
+  const clauses = (d.clauses||[]).map(c => `
+    <div class="clause ${c.severity}">
+      <div class="row1">
+        <div class="title">${escapeHtml(c.title||"")}</div>
+        <div class="tags"><span class="tag cat">${escapeHtml(c.category||"")}</span><span class="tag ${c.severity}">${escapeHtml(c.severity||"")}</span></div>
+      </div>
+      ${c.excerpt ? `<div class="excerpt">“${escapeHtml(c.excerpt)}”</div>` : ""}
+      <div class="explain">${escapeHtml(c.plain_explanation||"")}</div>
+    </div>`).join("");
+
+  const flags = (d.red_flags||[]).map(f => `<li>${escapeHtml(f)}</li>`).join("");
+  const dates = (d.key_dates||[]).map(f => `<li>${escapeHtml(f)}</li>`).join("");
+  const parties = (d.parties||[]).join(" · ");
+
+  readout.innerHTML = `
+    <div class="readout-inner" style="padding-bottom:0">
+      <div style="font-family:var(--serif); font-weight:600; font-size:19px; margin:0 0 5px; color:var(--ink);">${escapeHtml(d.document_type||"Document")}</div>
+      <div style="font-size:12px; color:var(--ink-faint); margin-bottom:14px;">${escapeHtml(parties)}</div>
+      <div class="summary-line">${escapeHtml(d.summary||"")}</div>
+      ${flags ? `<div class="checklist-block"><h3>Red flags</h3><ul class="plain">${flags}</ul></div>` : ""}
+      ${dates ? `<div class="checklist-block"><h3>Key dates</h3><ul class="plain">${dates}</ul></div>` : ""}
+      <div class="checklist-block"><h3>Clauses</h3>${clauses}</div>
+    </div>
+  `;
+}
+
+// ---------- Compare ----------
+function renderCompareSetup(){
+  const opts = Object.values(state.docs).map(d => `<option value="${d.doc_id}">${escapeHtml(d.filename)}</option>`).join("");
+  if(Object.keys(state.docs).length < 2){
+    readout.innerHTML = `<div class="empty"><div class="glyph">⇄</div><div class="empty-title">Load at least two documents</div><div class="empty-copy">Compare needs two documents to work with.</div></div>`;
+    return;
+  }
+  readout.innerHTML = `
+    <div class="empty">
+      <div class="glyph">⇄</div>
+      <div class="empty-title" style="font-size:19px">Compare two documents</div>
+      <div class="empty-copy">Choose which two to compare side by side.</div>
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <select id="selA" class="doc-card" style="font-family:var(--mono); font-size:11px; padding:9px;">${opts}</select>
+        <select id="selB" class="doc-card" style="font-family:var(--mono); font-size:11px; padding:9px;">${opts}</select>
+      </div>
+      <button class="btn primary" id="runCompare">Run scan</button>
+    </div>`;
+  const ids = Object.keys(state.docs);
+  $("#selA").value = ids[0]; $("#selB").value = ids[1];
+  $("#runCompare").addEventListener("click", () => {
+    state.compareA = $("#selA").value;
+    state.compareB = $("#selB").value;
+    if(state.compareA === state.compareB){ alert("Pick two different documents."); return; }
+    runCompare();
+  });
+}
+
+async function runCompare(){
+  loadingState("Comparing documents…");
+  try{
+    const res = await fetch(apiBase() + "/api/compare", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id_a: state.compareA, doc_id_b: state.compareB})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail || "Request failed");
+    renderCompare(d);
+  }catch(e){ errorState(e.message); }
+}
+
+function renderCompare(d){
+  const diffs = (d.differences||[]).map(x => `
+    <div class="diff">
+      <div class="topic">${escapeHtml(x.topic||"")} <span class="tag ${x.significance}">${escapeHtml(x.significance||"")}</span></div>
+      <div class="grid2">
+        <div><div class="col-a-b">Document A</div><div class="cell">${escapeHtml(x.doc_a||"")}</div></div>
+        <div><div class="col-a-b">Document B</div><div class="cell">${escapeHtml(x.doc_b||"")}</div></div>
+      </div>
+      ${x.why_it_matters ? `<div class="why">${escapeHtml(x.why_it_matters)}</div>` : ""}
+    </div>`).join("");
+
+  const onlyA = (d.only_in_a||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+  const onlyB = (d.only_in_b||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+  const notes = (d.recommendation_notes||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+
+  readout.innerHTML = `
+    <div class="readout-inner" style="padding-bottom:0">
+      <div class="summary-line">${escapeHtml(d.overview||"")}</div>
+      <div class="checklist-block"><h3>Differences</h3>${diffs}</div>
+      ${onlyA || onlyB ? `<div class="grid2 checklist-block">
+        ${onlyA ? `<div><h3 style="font-family:var(--serif);font-size:13.5px;margin:0 0 8px;">Only in A</h3><ul class="plain">${onlyA}</ul></div>` : "<div></div>"}
+        ${onlyB ? `<div><h3 style="font-family:var(--serif);font-size:13.5px;margin:0 0 8px;">Only in B</h3><ul class="plain">${onlyB}</ul></div>` : "<div></div>"}
+      </div>` : ""}
+      ${notes ? `<div class="checklist-block"><h3>Worth double-checking</h3><ul class="plain">${notes}</ul></div>` : ""}
+    </div>
+  `;
+}
+
+// ---------- Chat ----------
+function renderChat(){
+  readout.innerHTML = `
+    <div class="chat-log" id="chatLog"></div>
+    <div class="chat-input-row">
+      <input id="chatInput" placeholder="Ask about this document…" />
+      <button class="btn primary" id="chatSend">Ask</button>
+    </div>
+  `;
+  renderChatLog();
+  const send = async () => {
+    const input = $("#chatInput");
+    const q = input.value.trim();
+    if(!q || !requireDoc()) return;
+    input.value = "";
+    state.chatHistory.push({role:"user", content:q});
+    renderChatLog();
+    state.chatHistory.push({role:"assistant", content:""});
+    renderChatLog();
+    try{
+      const res = await fetch(apiBase() + "/api/chat", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({doc_id: state.activeDoc, question:q, history: state.chatHistory.slice(0,-1)})
+      });
+      if(!res.ok){ const d = await res.json(); throw new Error(d.detail || "Request failed"); }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        acc += decoder.decode(value, {stream:true});
+        state.chatHistory[state.chatHistory.length-1].content = acc;
+        renderChatLog();
+      }
+    }catch(e){
+      state.chatHistory[state.chatHistory.length-1].content = "Error: " + e.message;
+      renderChatLog();
+    }
+  };
+  $("#chatSend").addEventListener("click", send);
+  $("#chatInput").addEventListener("keydown", e => { if(e.key==="Enter") send(); });
+}
+
+function renderChatLog(){
+  const log = $("#chatLog");
+  if(!log) return;
+  log.innerHTML = state.chatHistory.map(m =>
+    `<div class="msg ${m.role}">${escapeHtml(m.content) || '<span class="spinner"></span>'}</div>`
+  ).join("");
+  log.scrollTop = log.scrollHeight;
+}
+
+// ---------- Checklist ----------
+async function runChecklist(){
+  loadingState("Building checklist…");
+  try{
+    const res = await fetch(apiBase() + "/api/checklist", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id: state.activeDoc})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail || "Request failed");
+    renderChecklist(d);
+  }catch(e){ errorState(e.message); }
+}
+
+function renderChecklist(d){
+  const block = (title, items) => items && items.length
+    ? `<div class="checklist-block"><h3>${title}</h3><ul class="plain">${items.map(i=>`<li>${escapeHtml(i)}</li>`).join("")}</ul></div>` : "";
+  const glossary = (d.glossary||[]).map(g => `
+    <div class="glossary-item"><span class="term">${escapeHtml(g.term)}</span><span class="def">${escapeHtml(g.definition)}</span></div>
+  `).join("");
+
+  readout.innerHTML = `
+    <div class="readout-inner" style="padding-bottom:0">
+      ${block("Action items", d.action_items)}
+      ${block("Key dates", d.key_dates)}
+      ${block("Documents to gather", d.documents_to_gather)}
+      ${block("Questions for a lawyer", d.questions_for_a_lawyer)}
+      ${glossary ? `<div class="checklist-block"><h3>Glossary</h3>${glossary}</div>` : ""}
+    </div>
+  `;
+}
+
+renderMode();
+</script>
+</body>
+</html>

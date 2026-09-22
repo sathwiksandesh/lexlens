@@ -35,6 +35,3 @@ pip-wheel-metadata/
 .idea/
 .DS_Store
 Thumbs.db
-
-# Local archives
-*.zip

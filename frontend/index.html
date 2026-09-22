@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LexLens — Legal Document Instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E121A;
+    --panel:#161C27;
+    --panel-2:#1D2530;
+    --border:#2A3341;
+    --text:#E7E5DE;
+    --muted:#8791A1;
+    --muted-2:#5C6577;
+    --teal:#4FC3A1;
+    --amber:#E0A63C;
+    --red:#E8593F;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --display: 'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(79,195,161,0.06), transparent),
+      var(--ink);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(79,195,161,0.35);}
+
+  a{color:var(--teal);}
+
+  .app{
+    max-width:1320px;
+    margin:0 auto;
+    padding:22px 28px 60px;
+  }
+
+  /* ---------- Header / instrument bar ---------- */
+  header.bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    padding:14px 20px;
+    margin-bottom:20px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    width:34px;height:34px;border-radius:8px;
+    background:radial-gradient(circle at 30% 30%, var(--teal), #1c6e58 70%);
+    position:relative;
+    flex:none;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+  }
+  .brand-mark::after{
+    content:"";
+    position:absolute;inset:9px;
+    border:2px solid rgba(14,18,26,0.55);
+    border-radius:50%;
+  }
+  .brand h1{
+    font-family:var(--display);
+    font-size:19px;
+    letter-spacing:0.01em;
+    margin:0;
+    font-weight:700;
+  }
+  .brand p{
+    margin:1px 0 0;
+    font-size:11.5px;
+    color:var(--muted);
+    font-family:var(--mono);
+  }
+  .status-readout{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--muted-2);}
+  .dot.live{background:var(--teal); box-shadow:0 0 8px rgba(79,195,161,0.9);}
+  .status-readout input{
+    background:var(--ink);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:11px;
+    padding:6px 8px;
+    border-radius:6px;
+    width:220px;
+  }
+
+  /* ---------- Layout ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:18px;
+    align-items:start;
+  }
+  @media (max-width:860px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{
+    border:1px solid var(--border);
+    background:var(--panel);
+    border-radius:10px;
+    padding:18px;
+  }
+  .panel + .panel{margin-top:18px;}
+
+  .panel h2{
+    font-family:var(--display);
+    font-size:13px;
+    text-transform:none;
+    letter-spacing:0.02em;
+    margin:0 0 12px;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel h2 .idx{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--teal);
+    border:1px solid rgba(79,195,161,0.4);
+    border-radius:4px;
+    padding:1px 6px;
+  }
+
+  /* ---------- Intake ---------- */
+  .drop{
+    border:1.5px dashed var(--border);
+    border-radius:8px;
+    padding:20px 14px;
+    text-align:center;
+    color:var(--muted);
+    font-size:12.5px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .drop:hover, .drop.drag{border-color:var(--teal); background:rgba(79,195,161,0.05);}
+  .drop b{color:var(--text); font-weight:600;}
+  .drop input{display:none;}
+
+  textarea.paste{
+    width:100%;
+    min-height:70px;
+    background:var(--ink);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:8px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    padding:10px;
+    resize:vertical;
+    margin-top:10px;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:12.5px;
+    padding:9px 14px;
+    border-radius:7px;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .05s ease;
+  }
+  .btn:hover{border-color:var(--teal);}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--teal); color:#08251c; border-color:var(--teal);}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:0.45; cursor:not-allowed;}
+  .btn.full{width:100%; justify-content:center; margin-top:10px;}
+
+  .doc-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    border-radius:7px;
+    padding:9px 11px;
+    margin-top:8px;
+    font-size:12px;
+  }
+  .doc-card .name{font-weight:600; font-family:var(--mono); font-size:11.5px;}
+  .doc-card .meta{color:var(--muted); font-size:10.5px; margin-top:2px;}
+  .doc-card .x{color:var(--muted); cursor:pointer; font-size:15px; line-height:1;}
+  .doc-card .x:hover{color:var(--red);}
+
+  /* ---------- Mode switch ---------- */
+  .modes{display:flex; flex-direction:column; gap:6px;}
+  .mode-btn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:left;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--muted);
+    padding:10px 12px;
+    border-radius:7px;
+    font-family:var(--sans);
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .mode-btn .k{font-family:var(--mono); font-size:10px; color:var(--muted-2); border:1px solid var(--border); border-radius:4px; padding:0 5px;}
+  .mode-btn.active{color:var(--text); border-color:var(--teal); background:rgba(79,195,161,0.07);}
+  .mode-btn.active .k{color:var(--teal); border-color:rgba(79,195,161,0.5);}
+  .mode-btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  /* ---------- Main readout ---------- */
+  .readout{min-height:420px;}
+  .empty{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:380px;
+    color:var(--muted-2);
+    text-align:center;
+    font-family:var(--mono);
+    font-size:12px;
+    gap:10px;
+  }
+  .empty .glyph{
+    width:46px;height:46px;border-radius:50%;
+    border:1.5px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display); font-size:18px; color:var(--muted-2);
+  }
+
+  .prose{font-size:14px; line-height:1.65;}
+  .prose h2{font-family:var(--display); font-size:16px; margin:22px 0 8px; color:var(--teal);}
+  .prose h2:first-child{margin-top:0;}
+  .prose p{margin:0 0 10px; color:var(--text);}
+  .cursor-blink{display:inline-block; width:7px; height:14px; background:var(--teal); vertical-align:text-bottom; animation:blink 1s step-end infinite;}
+  @keyframes blink{50%{opacity:0;}}
+
+  .summary-line{
+    font-size:14px; color:var(--text); line-height:1.6;
+    padding:12px 14px; border-left:2px solid var(--teal);
+    background:rgba(79,195,161,0.05); border-radius:0 6px 6px 0;
+    margin-bottom:16px;
+  }
+
+  .tag{
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    padding:2px 7px; border-radius:4px; text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .tag.high{background:rgba(232,89,63,0.15); color:var(--red); border:1px solid rgba(232,89,63,0.4);}
+  .tag.medium{background:rgba(224,166,60,0.15); color:var(--amber); border:1px solid rgba(224,166,60,0.4);}
+  .tag.low{background:rgba(79,195,161,0.15); color:var(--teal); border:1px solid rgba(79,195,161,0.4);}
+  .tag.cat{background:var(--panel-2); color:var(--muted); border:1px solid var(--border);}
+
+  .clause{
+    border:1px solid var(--border);
+    border-left-width:3px;
+    background:var(--panel-2);
+    border-radius:8px;
+    padding:13px 15px;
+    margin-bottom:10px;
+  }
+  .clause.high{border-left-color:var(--red);}
+  .clause.medium{border-left-color:var(--amber);}
+  .clause.low{border-left-color:var(--teal);}
+  .clause .row1{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; flex-wrap:wrap;}
+  .clause .title{font-weight:600; font-size:13.5px;}
+  .clause .tags{display:flex; gap:6px;}
+  .clause .excerpt{font-family:var(--mono); font-size:11px; color:var(--muted); border-left:2px solid var(--border); padding-left:8px; margin:6px 0;}
+  .clause .explain{font-size:13px; color:var(--text); line-height:1.55;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:700px){.grid2{grid-template-columns:1fr;}}
+  .col-a-b{font-family:var(--mono); font-size:9.5px; color:var(--muted-2); text-transform:uppercase; margin-bottom:4px; letter-spacing:0.04em;}
+  .diff{border:1px solid var(--border); border-radius:8px; padding:13px 15px; margin-bottom:10px; background:var(--panel-2);}
+  .diff .topic{font-weight:600; font-size:13.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .diff .why{font-size:12.5px; color:var(--muted); margin-top:8px;}
+  .cell{font-size:12.5px; padding:9px 10px; background:var(--ink); border-radius:6px; border:1px solid var(--border); line-height:1.5;}
+
+  .chat-log{display:flex; flex-direction:column; gap:12px; margin-bottom:14px; max-height:460px; overflow-y:auto; padding-right:4px;}
+  .msg{max-width:82%; padding:10px 13px; border-radius:9px; font-size:13.5px; line-height:1.55;}
+  .msg.user{align-self:flex-end; background:rgba(79,195,161,0.14); border:1px solid rgba(79,195,161,0.3);}
+  .msg.assistant{align-self:flex-start; background:var(--panel-2); border:1px solid var(--border);}
+  .chat-input-row{display:flex; gap:8px;}
+  .chat-input-row input{
+    flex:1; background:var(--ink); border:1px solid var(--border); color:var(--text);
+    border-radius:7px; padding:10px 12px; font-family:var(--sans); font-size:13px;
+  }
+
+  ul.plain{margin:0; padding-left:18px; font-size:13px; line-height:1.7; color:var(--text);}
+  .checklist-block{margin-bottom:18px;}
+  .checklist-block h3{font-family:var(--display); font-size:13.5px; margin:0 0 8px; color:var(--teal);}
+  .glossary-item{display:flex; gap:8px; font-size:13px; margin-bottom:7px;}
+  .glossary-item .term{font-family:var(--mono); font-weight:600; color:var(--text); flex:none; min-width:130px;}
+  .glossary-item .def{color:var(--muted);}
+
+  .footer-note{
+    font-family:var(--mono); font-size:10.5px; color:var(--muted-2);
+    border-top:1px solid var(--border); margin-top:22px; padding-top:14px; line-height:1.6;
+  }
+  .spinner{
+    display:inline-block; width:13px; height:13px; border-radius:50%;
+    border:2px solid var(--border); border-top-color:var(--teal);
+    animation:spin .7s linear infinite; vertical-align:middle;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .err{color:var(--red); font-size:12.5px; font-family:var(--mono); padding:10px; border:1px solid rgba(232,89,63,0.4); background:rgba(232,89,63,0.08); border-radius:7px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="bar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>LexLens</h1>
+        <p>legal document instrument — read · compare · question</p>
+      </div>
+    </div>
+    <div class="status-readout">
+      <span class="dot" id="apiDot"></span>
+      <span id="apiStatus">checking API…</span>
+      <input id="apiBase" value="http://localhost:8000" spellcheck="false" />
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: intake + mode select -->
+    <div>
+      <div class="panel">
+        <h2><span class="idx">01</span> Load document</h2>
+        <label class="drop" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" />
+          <div><b>Drop a file</b> or click to browse</div>
+          <div style="margin-top:4px; font-size:11px;">PDF, DOCX, or TXT</div>
+        </label>
+        <textarea class="paste" id="pasteBox" placeholder="…or paste raw text here"></textarea>
+        <button class="btn full" id="pasteBtn">Load pasted text</button>
+        <div id="docList"></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="idx">02</span> Select scan mode</h2>
+        <div class="modes">
+          <button class="mode-btn active" data-mode="simplify"><span class="k">S</span> Plain-language rewrite</button>
+          <button class="mode-btn" data-mode="analyze"><span class="k">A</span> Clause &amp; risk analysis</button>
+          <button class="mode-btn" data-mode="compare"><span class="k">C</span> Compare two documents</button>
+          <button class="mode-btn" data-mode="chat"><span class="k">Q</span> Ask questions</button>
+          <button class="mode-btn" data-mode="checklist"><span class="k">N</span> Checklist &amp; next steps</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: readout -->
+    <div class="panel readout" id="readoutPanel">
+      <div class="empty">
+        <div class="glyph">?</div>
+        <div>Load a document on the left, then run a scan.<br/>Nothing is analyzed until you press run.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    LexLens explains and organizes legal text. It does not provide legal advice, does not represent you,
+    and is not a substitute for a licensed attorney. For decisions with real consequences, confirm with a
+    qualified professional in your jurisdiction. Documents are held in server memory for this session only.
+  </div>
+</div>
+
+<script>
+const state = {
+  docs: {},        // doc_id -> {filename, chars}
+  activeDoc: null,
+  compareA: null,
+  compareB: null,
+  mode: "simplify",
+  chatHistory: [],
+};
+
+const $ = (sel) => document.querySelector(sel);
+const readout = $("#readoutPanel");
+const docList = $("#docList");
+const apiBaseInput = $("#apiBase");
+
+function apiBase(){ return apiBaseInput.value.replace(/\/$/, ""); }
+
+async function checkHealth(){
+  try{
+    const r = await fetch(apiBase() + "/api/health");
+    const d = await r.json();
+    $("#apiDot").classList.toggle("live", d.groq_configured);
+    $("#apiStatus").textContent = d.groq_configured ? "API online · Groq configured" : "API online · GROQ_API_KEY missing";
+  }catch(e){
+    $("#apiDot").classList.remove("live");
+    $("#apiStatus").textContent = "API unreachable";
+  }
+}
+checkHealth();
+apiBaseInput.addEventListener("change", checkHealth);
+
+// ---------- Upload ----------
+const fileInput = $("#fileInput");
+const dropZone = $("#dropZone");
+fileInput.addEventListener("change", () => { if(fileInput.files[0]) uploadFile(fileInput.files[0]); });
+["dragover","dragenter"].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add("drag"); }));
+["dragleave","drop"].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove("drag"); }));
+dropZone.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if(f) uploadFile(f); });
+
+$("#pasteBtn").addEventListener("click", async () => {
+  const text = $("#pasteBox").value.trim();
+  if(!text) return;
+  try{
+    const r = await fetch(apiBase() + "/api/upload-text", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text, filename: "Pasted text " + (Object.keys(state.docs).length+1)})
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || "Upload failed");
+    addDoc(d);
+    $("#pasteBox").value = "";
+  }catch(e){ alert(e.message); }
+});
+
+async function uploadFile(file){
+  const fd = new FormData();
+  fd.append("file", file);
+  try{
+    const r = await fetch(apiBase() + "/api/upload", {method:"POST", body: fd});
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || "Upload failed");
+    addDoc(d);
+  }catch(e){ alert(e.message); }
+  fileInput.value = "";
+}
+
+function addDoc(d){
+  state.docs[d.doc_id] = d;
+  if(!state.activeDoc) state.activeDoc = d.doc_id;
+  renderDocList();
+}
+
+function renderDocList(){
+  docList.innerHTML = "";
+  Object.values(state.docs).forEach(d => {
+    const card = document.createElement("div");
+    card.className = "doc-card";
+    const isActive = d.doc_id === state.activeDoc;
+    card.style.borderColor = isActive ? "var(--teal)" : "var(--border)";
+    card.innerHTML = `
+      <div style="cursor:pointer" data-select="${d.doc_id}">
+        <div class="name">${escapeHtml(d.filename)}</div>
+        <div class="meta">${d.chars.toLocaleString()} chars ${isActive ? "· active" : ""}</div>
+      </div>
+      <span class="x" data-remove="${d.doc_id}">&times;</span>
+    `;
+    docList.appendChild(card);
+  });
+  docList.querySelectorAll("[data-select]").forEach(el => {
+    el.addEventListener("click", () => { state.activeDoc = el.dataset.select; renderDocList(); });
+  });
+  docList.querySelectorAll("[data-remove]").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = el.dataset.remove;
+      delete state.docs[id];
+      if(state.activeDoc === id) state.activeDoc = Object.keys(state.docs)[0] || null;
+      renderDocList();
+    });
+  });
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ---------- Mode switching ----------
+document.querySelectorAll(".mode-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.mode = btn.dataset.mode;
+    state.chatHistory = [];
+    renderMode();
+  });
+});
+
+function requireDoc(){
+  if(!state.activeDoc){
+    readout.innerHTML = `<div class="empty"><div class="glyph">!</div><div>Load a document first.</div></div>`;
+    return false;
+  }
+  return true;
+}
+
+function renderMode(){
+  if(state.mode === "compare"){ renderCompareSetup(); return; }
+  if(!requireDoc()) return;
+  if(state.mode === "simplify") return renderRunButton("Plain-language rewrite", "Rewrites the document section by section in everyday language.", runSimplify);
+  if(state.mode === "analyze") return renderRunButton("Clause &amp; risk analysis", "Extracts obligations, rights, deadlines, and flags risky terms.", runAnalyze);
+  if(state.mode === "chat") return renderChat();
+  if(state.mode === "checklist") return renderRunButton("Checklist &amp; next steps", "Builds an action list, key dates, documents to gather, and questions for a lawyer.", runChecklist);
+}
+
+function renderRunButton(title, desc, fn){
+  readout.innerHTML = `
+    <div class="empty">
+      <div class="glyph">▷</div>
+      <div><b style="color:var(--text)">${title}</b><br/>${desc}</div>
+      <button class="btn primary" id="runBtn">Run scan</button>
+    </div>`;
+  $("#runBtn").addEventListener("click", fn);
+}
+
+function loadingState(label){
+  readout.innerHTML = `<div class="empty"><span class="spinner"></span>&nbsp; ${label}</div>`;
+}
+
+function errorState(msg){
+  readout.innerHTML = `<div class="err">Scan failed: ${escapeHtml(msg)}</div>`;
+}
+
+// ---------- Simplify (streaming) ----------
+async function runSimplify(){
+  loadingState("Rewriting in plain language…");
+  try{
+    const res = await fetch(apiBase() + "/api/simplify", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id: state.activeDoc})
+    });
+    if(!res.ok){ const d = await res.json(); throw new Error(d.detail || "Request failed"); }
+    readout.innerHTML = `<div class="prose" id="streamTarget"><span class="cursor-blink"></span></div>`;
+    const target = $("#streamTarget");
+    await streamInto(res, target);
+  }catch(e){ errorState(e.message); }
+}
+
+async function streamInto(res, target){
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let acc = "";
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    acc += decoder.decode(value, {stream:true});
+    target.innerHTML = mdLite(acc) + '<span class="cursor-blink"></span>';
+  }
+  target.innerHTML = mdLite(acc);
+}
+
+function mdLite(text){
+  // Minimal markdown: ## headings and paragraphs. Escapes HTML first.
+  const esc = escapeHtml(text);
+  const lines = esc.split("\n");
+  let html = "";
+  let para = [];
+  const flush = () => { if(para.length){ html += "<p>" + para.join(" ") + "</p>"; para = []; } };
+  for(const line of lines){
+    const h = line.match(/^##\s+(.*)/);
+    if(h){ flush(); html += `<h2>${h[1]}</h2>`; }
+    else if(line.trim() === ""){ flush(); }
+    else { para.push(line.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")); }
+  }
+  flush();
+  return html;
+}
+
+// ---------- Analyze ----------
+async function runAnalyze(){
+  loadingState("Extracting clauses and risks…");
+  try{
+    const res = await fetch(apiBase() + "/api/analyze", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id: state.activeDoc})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail || "Request failed");
+    renderAnalyze(d);
+  }catch(e){ errorState(e.message); }
+}
+
+function renderAnalyze(d){
+  const clauses = (d.clauses||[]).map(c => `
+    <div class="clause ${c.severity}">
+      <div class="row1">
+        <div class="title">${escapeHtml(c.title||"")}</div>
+        <div class="tags"><span class="tag cat">${escapeHtml(c.category||"")}</span><span class="tag ${c.severity}">${escapeHtml(c.severity||"")}</span></div>
+      </div>
+      ${c.excerpt ? `<div class="excerpt">“${escapeHtml(c.excerpt)}”</div>` : ""}
+      <div class="explain">${escapeHtml(c.plain_explanation||"")}</div>
+    </div>`).join("");
+
+  const flags = (d.red_flags||[]).map(f => `<li>${escapeHtml(f)}</li>`).join("");
+  const dates = (d.key_dates||[]).map(f => `<li>${escapeHtml(f)}</li>`).join("");
+  const parties = (d.parties||[]).join(" · ");
+
+  readout.innerHTML = `
+    <h2 style="font-family:var(--display); font-size:15px; margin:0 0 4px;">${escapeHtml(d.document_type||"Document")}</h2>
+    <div style="font-family:var(--mono); font-size:11px; color:var(--muted); margin-bottom:12px;">${escapeHtml(parties)}</div>
+    <div class="summary-line">${escapeHtml(d.summary||"")}</div>
+    ${flags ? `<div class="checklist-block"><h3>Red flags</h3><ul class="plain">${flags}</ul></div>` : ""}
+    ${dates ? `<div class="checklist-block"><h3>Key dates</h3><ul class="plain">${dates}</ul></div>` : ""}
+    <div class="checklist-block"><h3>Clauses</h3>${clauses}</div>
+  `;
+}
+
+// ---------- Compare ----------
+function renderCompareSetup(){
+  const opts = Object.values(state.docs).map(d => `<option value="${d.doc_id}">${escapeHtml(d.filename)}</option>`).join("");
+  if(Object.keys(state.docs).length < 2){
+    readout.innerHTML = `<div class="empty"><div class="glyph">C</div><div>Load at least two documents to compare them.</div></div>`;
+    return;
+  }
+  readout.innerHTML = `
+    <div class="empty">
+      <div class="glyph">⇄</div>
+      <div><b style="color:var(--text)">Compare two documents</b><br/>Choose which two to compare side by side.</div>
+      <div style="display:flex; gap:10px; margin-top:6px;">
+        <select id="selA" class="doc-card" style="font-family:var(--mono); font-size:11px; padding:8px;">${opts}</select>
+        <select id="selB" class="doc-card" style="font-family:var(--mono); font-size:11px; padding:8px;">${opts}</select>
+      </div>
+      <button class="btn primary" id="runCompare">Run scan</button>
+    </div>`;
+  const ids = Object.keys(state.docs);
+  $("#selA").value = ids[0]; $("#selB").value = ids[1];
+  $("#runCompare").addEventListener("click", () => {
+    state.compareA = $("#selA").value;
+    state.compareB = $("#selB").value;
+    if(state.compareA === state.compareB){ alert("Pick two different documents."); return; }
+    runCompare();
+  });
+}
+
+async function runCompare(){
+  loadingState("Comparing documents…");
+  try{
+    const res = await fetch(apiBase() + "/api/compare", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id_a: state.compareA, doc_id_b: state.compareB})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail || "Request failed");
+    renderCompare(d);
+  }catch(e){ errorState(e.message); }
+}
+
+function renderCompare(d){
+  const diffs = (d.differences||[]).map(x => `
+    <div class="diff">
+      <div class="topic">${escapeHtml(x.topic||"")} <span class="tag ${x.significance}">${escapeHtml(x.significance||"")}</span></div>
+      <div class="grid2">
+        <div><div class="col-a-b">Document A</div><div class="cell">${escapeHtml(x.doc_a||"")}</div></div>
+        <div><div class="col-a-b">Document B</div><div class="cell">${escapeHtml(x.doc_b||"")}</div></div>
+      </div>
+      ${x.why_it_matters ? `<div class="why">${escapeHtml(x.why_it_matters)}</div>` : ""}
+    </div>`).join("");
+
+  const onlyA = (d.only_in_a||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+  const onlyB = (d.only_in_b||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+  const notes = (d.recommendation_notes||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+
+  readout.innerHTML = `
+    <div class="summary-line">${escapeHtml(d.overview||"")}</div>
+    <div class="checklist-block"><h3>Differences</h3>${diffs}</div>
+    ${onlyA || onlyB ? `<div class="grid2 checklist-block">
+      ${onlyA ? `<div><h3>Only in A</h3><ul class="plain">${onlyA}</ul></div>` : "<div></div>"}
+      ${onlyB ? `<div><h3>Only in B</h3><ul class="plain">${onlyB}</ul></div>` : "<div></div>"}
+    </div>` : ""}
+    ${notes ? `<div class="checklist-block"><h3>Worth double-checking</h3><ul class="plain">${notes}</ul></div>` : ""}
+  `;
+}
+
+// ---------- Chat ----------
+function renderChat(){
+  readout.innerHTML = `
+    <div class="chat-log" id="chatLog"></div>
+    <div class="chat-input-row">
+      <input id="chatInput" placeholder="Ask about this document…" />
+      <button class="btn primary" id="chatSend">Ask</button>
+    </div>
+  `;
+  renderChatLog();
+  const send = async () => {
+    const input = $("#chatInput");
+    const q = input.value.trim();
+    if(!q || !requireDoc()) return;
+    input.value = "";
+    state.chatHistory.push({role:"user", content:q});
+    renderChatLog();
+    state.chatHistory.push({role:"assistant", content:""});
+    renderChatLog();
+    try{
+      const res = await fetch(apiBase() + "/api/chat", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({doc_id: state.activeDoc, question:q, history: state.chatHistory.slice(0,-1)})
+      });
+      if(!res.ok){ const d = await res.json(); throw new Error(d.detail || "Request failed"); }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        acc += decoder.decode(value, {stream:true});
+        state.chatHistory[state.chatHistory.length-1].content = acc;
+        renderChatLog();
+      }
+    }catch(e){
+      state.chatHistory[state.chatHistory.length-1].content = "Error: " + e.message;
+      renderChatLog();
+    }
+  };
+  $("#chatSend").addEventListener("click", send);
+  $("#chatInput").addEventListener("keydown", e => { if(e.key==="Enter") send(); });
+}
+
+function renderChatLog(){
+  const log = $("#chatLog");
+  if(!log) return;
+  log.innerHTML = state.chatHistory.map(m =>
+    `<div class="msg ${m.role}">${escapeHtml(m.content) || '<span class="spinner"></span>'}</div>`
+  ).join("");
+  log.scrollTop = log.scrollHeight;
+}
+
+// ---------- Checklist ----------
+async function runChecklist(){
+  loadingState("Building checklist…");
+  try{
+    const res = await fetch(apiBase() + "/api/checklist", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({doc_id: state.activeDoc})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail || "Request failed");
+    renderChecklist(d);
+  }catch(e){ errorState(e.message); }
+}
+
+function renderChecklist(d){
+  const block = (title, items) => items && items.length
+    ? `<div class="checklist-block"><h3>${title}</h3><ul class="plain">${items.map(i=>`<li>${escapeHtml(i)}</li>`).join("")}</ul></div>` : "";
+  const glossary = (d.glossary||[]).map(g => `
+    <div class="glossary-item"><span class="term">${escapeHtml(g.term)}</span><span class="def">${escapeHtml(g.definition)}</span></div>
+  `).join("");
+
+  readout.innerHTML = `
+    ${block("Action items", d.action_items)}
+    ${block("Key dates", d.key_dates)}
+    ${block("Documents to gather", d.documents_to_gather)}
+    ${block("Questions for a lawyer", d.questions_for_a_lawyer)}
+    ${glossary ? `<div class="checklist-block"><h3>Glossary</h3>${glossary}</div>` : ""}
+  `;
+}
+
+renderMode();
+</script>
+</body>
+</html>
