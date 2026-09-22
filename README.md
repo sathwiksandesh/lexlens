@@ -51,12 +51,12 @@ Groq is configured.
 ### 1. Backend
 
 ```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv
+.venv\Scripts\activate                 # Windows PowerShell
 pip install -r requirements.txt
-cp .env.example .env
+copy backend\.env.example backend\.env
 # edit .env and paste your key from https://console.groq.com/keys
-uvicorn main:app --reload --port 8000
+python -m uvicorn backend.main:app --reload --port 8000
 ```
 
 ### 2. Frontend
