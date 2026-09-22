@@ -91,3 +91,7 @@ site origin; when opened directly as a file, it defaults to
 - Add jurisdiction-aware prompting (ask the user their state/country) so
   red-flag detection can reference locally relevant norms — while keeping
   the "not legal advice" boundary intact.
+## Developer
+
+## Siddhantam Sathwik Sandesh
+Artificial Intelligence & Data Science Student
